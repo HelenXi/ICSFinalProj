@@ -1,5 +1,6 @@
 import socket
 import time
+import random
 
 M_UNDEF     = '0'
 M_LOGIN     = '1'
@@ -12,8 +13,8 @@ M_LIST      = '7'
 M_POEM      = '8'
 M_TIME      = '9'
 
-CHAT_IP = ''
-#CHAT_IP = socket.gethostname()
+CHAT_IP = ''    #for Mac
+#CHAT_IP = socket.gethostname()  #for PC
 CHAT_PORT = 1112
 SERVER = (CHAT_IP, CHAT_PORT)
 
@@ -84,3 +85,59 @@ def text_proc(text, user):
     ctime = time.strftime('%d.%m.%y,%H:%M', time.localtime())
     return('(' + ctime + ') ' + user + ' : ' + text) # message goes directly to screen
 
+
+
+def is_prime(n):
+    if n == 1:
+        return False
+    isprime = True
+    for i in range(2,n):
+        if n % i == 0:
+            isprime = False
+            break
+    return isprime
+    
+def produce_public():
+    prime = []
+    for n in range(1,25):
+        if is_prime(n):
+            prime.append(n)
+    return random.choice(prime)
+
+def produce_primitive(prime):
+    factors = []
+    num = prime - 1
+    pri_fac = []
+    for n in range(2,num):
+        if is_prime(n):
+            pri_fac.append(n)
+    change = False
+    while change:
+        change = False
+        for i in pri_fac:
+            if num % i == 0:
+                change = True
+                num = num / i
+                if i not in factors:
+                    factors.append(i)
+    for a in range(2,prime):
+        is_primitive = True
+        for x in factors:
+            if a**((num)/x) % prime == 1:
+                is_primitive = False
+                break
+        if is_primitive:
+            return a
+    return produce_primitive(11)
+
+p = produce_public()
+base = produce_primitive(p)    
+
+
+def add_key(name,key):
+    try:
+        public_keys[name] = key
+    except:
+        public_keys = {}
+        public_keys[name] = key
+        

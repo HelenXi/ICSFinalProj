@@ -5,6 +5,10 @@ Created on Sun Apr  5 00:00:32 2015
 @author: zhengzhang
 """
 from chat_utils import *
+import encryption as enc
+import decryption as dec
+import random
+import pickle
 
 class ClientSM:
     def __init__(self, s):
@@ -13,6 +17,25 @@ class ClientSM:
         self.me = ''
         self.out_msg = ''
         self.s = s
+        self.keys = self.produce_key()
+
+    def produce_key(self):
+        per_private = random.randint(1,1000)
+        per_public = (base ** per_private) % p
+        return (per_private, per_public)
+    
+    def save_public_key(self):
+        try:
+            public_f = open('public.dat','rb')
+            public = pickle.load(public_f)
+            public_f.close()
+        except:
+            public = {}
+        public[self.get_myname()] = self.keys[1]
+        public_f = open('public.dat','wb')
+        pickle.dump(public,public_f)
+        public_f.close()
+        
 
     def set_state(self, state):
         self.state = state
@@ -119,7 +142,13 @@ class ClientSM:
 # This is event handling instate "S_CHATTING"
 #==============================================================================
         elif self.state == S_CHATTING:
-            if len(my_msg) > 0:     # my stuff going out
+            if len(my_msg) > 0: # my stuff going out
+                if my_msg[0] == '*':
+                    public_f = open('public.dat','rb')
+                    public_keys = pickle.load(public_f)
+                    public_f.close()
+                    to_name = my_msg[my_msg.index("{")+1:my_msg.index("}")]
+                    my_msg = '*'+enc.encryption(my_msg[1:],self.keys[0],public_keys[to_name],p)
                 mysend(self.s, M_EXCHANGE + "[" + self.me + "] " + my_msg)
                 if my_msg == 'bye':
                     self.disconnect()
@@ -129,8 +158,14 @@ class ClientSM:
                 if peer_code == M_CONNECT:
                     self.out_msg += "(" + peer_msg + " joined)\n"
                 else:
+                    if peer_msg[peer_msg.index(']')+2] == '*':
+                        public_f = open('public.dat','rb')
+                        public_keys = pickle.load(public_f)
+                        public_f.close()
+                        from_name = peer_msg[peer_msg.index('[')+1:peer_msg.index(']')]
+                        temp = peer_msg[:peer_msg.index(']')+2]+dec.decryption(peer_msg[peer_msg.index(']')+3:],self.keys[0],public_keys[from_name],p)
+                        peer_msg = temp
                     self.out_msg += peer_msg
-
             # I got bumped out
             if peer_code == M_DISCONNECT:
                 self.state = S_LOGGEDIN

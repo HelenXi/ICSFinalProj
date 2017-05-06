@@ -79,6 +79,7 @@ class Client:
 # zz: change!
                 self.sm.set_state(S_LOGGEDIN)
                 self.sm.set_myname(self.name)
+                self.sm.save_public_key()                
                 self.print_instructions()
                 return (True)
             elif response == M_LOGIN + 'duplicate':
